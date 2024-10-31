@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  pg-db:
+    image: postgres:latest
+    container_name: pgsqlDB
+    environment:
+      POSTGRES_USER: mit
+      POSTGRES_PASSWORD: ssl12345
+      POSTGRES_DB: BooksOnline
+    ports:
+      - '5432:5432'
+    #volumes:
+     # - pg_data:/var/lib/postgresql/data
+    networks:
+      - golangbooks_1
+
+networks:
+  golangbooks_1:
