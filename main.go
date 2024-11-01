@@ -10,7 +10,6 @@ import (
 
 func main() {
 	db.InitDB()
-	defer db.DB.Close()
 	server := gin.Default()
 	group := server.Group("/")
 
@@ -23,7 +22,7 @@ func main() {
 }
 
 func getBooks(ctx *gin.Context) {
-	books, err := models.GetAll()
+	books, err := models.GetAll(db.DB)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "count not fetch data try again"})
 	}
@@ -31,16 +30,17 @@ func getBooks(ctx *gin.Context) {
 }
 
 func AddNewBook(ctx *gin.Context) {
-	var Books models.Book
-	err := ctx.ShouldBindJSON(&Books)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"Could Not Parse the Books": err})
+	var books models.Book
+	// Bind JSON input directly to the book struct
+	if err := ctx.ShouldBindJSON(&books); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
-	err2 := Books.Save()
+
+	err2 := books.Save(db.DB)
 	if err2 != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"Could Not create the Books": err2.Error()})
 		return
 	}
-	ctx.JSON(http.StatusCreated, gin.H{"message": "Added New Book", "Books": Books})
+	ctx.JSON(http.StatusCreated, gin.H{"message": "Added New Book", "Books": books})
 }
