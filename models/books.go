@@ -2,48 +2,31 @@ package models
 
 import (
 	"errors"
-	"github.com/MirMonajir244/BooksOnline/db"
+	_ "github.com/MirMonajir244/BooksOnline/shared"
+	"gorm.io/gorm"
 )
 
 type Book struct {
-	Name        string  `json:"name" binding:"required"`
+	Name        string  `json:"name" gorm:"not null;unique"`
 	Description string  `json:"description"`
-	Author      string  `json:"author" binding:"required"`
-	Price       float64 `json:"price" binding:"required"`
-	UserID      string  `json:"userID" binding:"required"`
+	Author      string  `json:"author" gorm:"not null"`
+	Price       float64 `json:"price"`
+	UserID      string  `json:"userID" gorm:"not null;unique"`
 }
 
-func (b *Book) Save() error {
-	if db.DB == nil {
-		return errors.New("db is not initialized")
-	}
-	query := `INSERT INTO Books(name, description, author, price, userID) VALUES($1, $2, $3, $4, $5)`
-	re, err := db.DB.Prepare(query)
-	if err != nil {
-		return errors.New(err.Error())
-	}
-	_, err2 := re.Exec(b.Name, b.Description, b.Author, b.Price, b.UserID)
-	if err2 != nil {
-		return err
+func (b *Book) Save(db *gorm.DB) error {
+	err := db.Create(&b).Error
+	if err != nil && !errors.Is(err, gorm.ErrDuplicatedKey) {
+		return errors.New("could not save book" + err.Error())
 	}
 	return nil
 }
 
-func GetAll() ([]Book, error) {
-	query := `SELECT * FROM Books`
-	rows, err := db.DB.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+func GetAll(db *gorm.DB) ([]Book, error) {
 	var books []Book
-	for rows.Next() {
-		var book Book
-		err := rows.Scan(&book.Name, &book.Description, &book.Author, &book.Price, &book.UserID)
-		if err != nil {
-			return nil, err
-		}
-		books = append(books, book)
+	err := db.Find(&books).Error
+	if err != nil {
+		return books, errors.New("books not found")
 	}
 	return books, nil
 }
