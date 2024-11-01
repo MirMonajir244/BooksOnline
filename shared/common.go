@@ -11,4 +11,5 @@ type Book struct {
 type Common interface {
 	Save(book *Book) error
 	GetAll(book *Book) ([]Book, error)
+	UpdateBook(name string, updatedBook Book) error
 }
