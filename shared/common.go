@@ -6,6 +6,7 @@ type Book struct {
 	Author      string  `json:"author" gorm:"not null"`
 	Price       float64 `json:"price"`
 	UserID      string  `json:"userID" gorm:"not null;unique"`
+	Filename    []byte  `json:"file" gorm:"not null;type:bytea"`
 }
 
 type Common interface {
