@@ -4,7 +4,9 @@ import (
 	"github.com/MirMonajir244/BooksOnline/db"
 	"github.com/MirMonajir244/BooksOnline/models"
 	"github.com/gin-gonic/gin"
+	"io"
 	"net/http"
+	"strconv"
 )
 
 func getBooks(ctx *gin.Context) {
@@ -12,7 +14,18 @@ func getBooks(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "count not fetch data try again"})
 	}
-	ctx.JSON(http.StatusOK, books)
+	var bookResponses []models.Book
+	for _, book := range books {
+		bookResponses = append(bookResponses, models.Book{
+			Name:        book.Name,
+			Description: book.Description,
+			Author:      book.Author,
+			Price:       book.Price,
+			UserID:      book.UserID,
+		})
+	}
+
+	ctx.JSON(http.StatusOK, bookResponses)
 }
 
 func getBookByName(ctx *gin.Context) {
@@ -32,18 +45,55 @@ func getBookByName(ctx *gin.Context) {
 }
 
 func AddNewBook(ctx *gin.Context) {
-	var books models.Book
-	// Bind JSON input directly to the book struct
-	if err := ctx.ShouldBindJSON(&books); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+	// Get the uploaded file
+	file, err := ctx.FormFile("file")
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "file field is required"})
 		return
 	}
 
-	err2 := books.Save(db.DB)
-	if err2 != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"Could Not create the Books": err2.Error()})
+	// Create a new Book instance
+	var books models.Book
+
+	// Extract other fields from form data
+	books.Name = ctx.PostForm("name")
+	books.Author = ctx.PostForm("author")
+	books.Description = ctx.PostForm("description")
+	books.UserID = ctx.PostForm("userID")
+
+	// Parse the price field
+	priceStr := ctx.PostForm("price")
+	price, err := strconv.ParseFloat(priceStr, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid price"})
 		return
 	}
+	books.Price = price
+
+	// Open the uploaded file
+	openedFile, err := file.Open()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "could not open the file"})
+		return
+	}
+	defer openedFile.Close()
+
+	// Read the file into a byte slice
+	fileData, err := io.ReadAll(openedFile)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Could not read file"})
+		return
+	}
+
+	// Set the File field in the book struct (if applicable)
+	books.Filename = fileData // Assuming FilePath is the field for storing file data
+
+	// Save the book to the database
+	if err := books.Save(db.DB); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"Could Not create the Books": err.Error()})
+		return
+	}
+
 	ctx.JSON(http.StatusCreated, gin.H{"message": "Added New Book", "Books": books})
 }
 
