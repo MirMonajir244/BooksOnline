@@ -7,7 +7,7 @@ import (
 )
 
 type Book struct {
-	Name        string  `json:"name" gorm:"not null;unique"`
+	Name        string  `json:"name" gorm:"not null;unique;primaryKey"`
 	Description string  `json:"description"`
 	Author      string  `json:"author" gorm:"not null"`
 	Price       float64 `json:"price"`
@@ -29,4 +29,33 @@ func GetAll(db *gorm.DB) ([]Book, error) {
 		return books, errors.New("books not found")
 	}
 	return books, nil
+}
+
+func UpdateBook(db *gorm.DB, name string, updatedBook Book) error {
+	var existingBook Book
+
+	// Check if the book exists
+	if err := db.Where("name = ?", name).First(&existingBook).Error; err != nil {
+		return errors.New("book not found")
+	}
+
+	// Perform the update on the Book model
+	result := db.Model(&existingBook).Updates(Book{
+		Name:        updatedBook.Name,
+		Author:      updatedBook.Author,
+		Price:       updatedBook.Price,
+		Description: updatedBook.Description,
+	})
+
+	// Check for errors
+	if result.Error != nil {
+		return errors.New("could not update book: " + result.Error.Error())
+	}
+
+	// Check if any rows were affected
+	if result.RowsAffected == 0 {
+		return errors.New("no changes made; values may be the same")
+	}
+
+	return nil // Return nil if everything went fine
 }
