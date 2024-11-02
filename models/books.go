@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	_ "github.com/MirMonajir244/BooksOnline/shared"
 	"gorm.io/gorm"
 )
 
@@ -11,7 +10,7 @@ type Book struct {
 	Description string  `json:"description"`
 	Author      string  `json:"author" gorm:"not null"`
 	Price       float64 `json:"price"`
-	UserID      string  `json:"userID" gorm:"not null;unique"`
+	UserID      uint    `json:"userID" gorm:"not null;unique;"`
 	Filename    []byte  `json:"file" gorm:"type:bytea"`
 }
 
@@ -59,4 +58,15 @@ func UpdateBook(db *gorm.DB, name string, updatedBook Book) error {
 	}
 
 	return nil // Return nil if everything went fine
+}
+
+func DeleteBook(db *gorm.DB, name string) error {
+	var existingBook Book
+	if err := db.Where("name = ?", name).First(&existingBook).Error; err != nil {
+		return errors.New("book not found")
+	}
+	if err := db.Where("name = ?", name).Delete(&existingBook).Error; err != nil {
+		return errors.New("book not found")
+	}
+	return nil
 }

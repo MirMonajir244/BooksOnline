@@ -20,4 +20,8 @@ func InitDB() {
 	if err != nil {
 		return
 	}
+	err = DB.AutoMigrate(&models.Users{})
+	if err != nil {
+		return
+	}
 }
