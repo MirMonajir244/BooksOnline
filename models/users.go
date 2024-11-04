@@ -8,7 +8,7 @@ import (
 
 type Users struct {
 	UserName     string `json:"userName" gorm:"not null;unique"`
-	UserID       string `json:"userID" gorm:"not null;unique;primaryKey"`
+	UserID       int64  `json:"userID" gorm:"not null;unique;primaryKey"`
 	UserEmail    string `json:"userEmail" gorm:"not null;unique"`
 	UserPassword string `json:"userPassword" gorm:"not null"`
 	Books        []Book `json:"books" gorm:"foreignKey:UserID"`
