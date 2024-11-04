@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/MirMonajir244/BooksOnline/db"
 	"github.com/MirMonajir244/BooksOnline/models"
+	"github.com/MirMonajir244/BooksOnline/utils"
 	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
@@ -60,13 +61,9 @@ func AddNewBook(ctx *gin.Context) {
 	books.Description = ctx.PostForm("description")
 
 	//Parse the userID filed
-	UserIDstr := ctx.PostForm("userID")
-	userID, UserErr := strconv.ParseUint(UserIDstr, 10, 64)
-	if UserErr != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Enter the correct userID"})
-		return
-	}
-	books.UserID = uint(userID)
+	userstr := ctx.PostForm("userID")
+	userID, _ := strconv.ParseInt(userstr, 10, 64)
+	books.UserID = userID
 
 	// Parse the price field
 	priceStr := ctx.PostForm("price")
@@ -105,10 +102,10 @@ func AddNewBook(ctx *gin.Context) {
 }
 
 func UpdateBookByName(ctx *gin.Context) {
-	var books models.Book
+	var books *models.Book
 	name := ctx.Param("name")
 	ctx.ShouldBindJSON(&books)
-	err := models.UpdateBook(db.DB, name, books)
+	err := models.UpdateBook(db.DB, name, *books)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "Could not update the book", "Error": err})
 		return
@@ -158,5 +155,10 @@ func Login(ctx *gin.Context) {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"message": "Could not authenticate user" + CredErr.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "Login Successful", "Users": user.UserIdentifier})
+	userID, _ := strconv.ParseUint(strconv.FormatInt(i.UserID, 10), 10, 64)
+	token, jwtErr := utils.GenerateToken(i.UserName, i.UserEmail, uint(userID))
+	if jwtErr != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"message": "Could not authenticate user" + jwtErr.Error()})
+	}
+	ctx.JSON(http.StatusOK, gin.H{"message": "Login Successful", "Users": user.UserIdentifier, "Token": token})
 }

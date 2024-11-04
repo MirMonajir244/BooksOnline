@@ -1,16 +1,21 @@
 package routes
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/MirMonajir244/BooksOnline/middleware"
+	"github.com/gin-gonic/gin"
+)
 
 func RegisterRoutes(server *gin.Engine) {
-	group := server.Group("/")
-	auth := server.Group("/auth")
+	server.GET("/books", getBooks)
+	server.GET("/books/:name", getBookByName)
 
-	group.GET("/books", getBooks)
-	group.GET("/books/:name", getBookByName)
-	group.POST("/books", AddNewBook)
-	group.PUT("/books/:name", UpdateBookByName)
-	group.DELETE("/books/:name", DeleteBookByName)
+	authenticated := server.Group("/")
+	authenticated.Use(middleware.Authenticate)
+	authenticated.POST("/books", AddNewBook)
+	authenticated.PUT("/books/:name", UpdateBookByName)
+	authenticated.DELETE("/books/:name", DeleteBookByName)
+
+	auth := server.Group("/auth")
 	auth.POST("SignUp", SignUPUser)
 	auth.POST("/Login", Login)
 }

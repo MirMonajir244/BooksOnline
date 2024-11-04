@@ -10,7 +10,7 @@ type Book struct {
 	Description string  `json:"description"`
 	Author      string  `json:"author" gorm:"not null"`
 	Price       float64 `json:"price"`
-	UserID      uint    `json:"userID" gorm:"not null;unique;"`
+	UserID      int64   `json:"userID" gorm:"not null;unique;"`
 	Filename    []byte  `json:"file" gorm:"type:bytea"`
 }
 
